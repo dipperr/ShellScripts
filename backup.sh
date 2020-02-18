@@ -10,3 +10,4 @@ mkdir -v  $path/backup
 
 #copia os arquivos e diretorios do home do usuario
 cp -riv ~/* $path/backup/
+#teste
