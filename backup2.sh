@@ -1,8 +1,9 @@
 #!/bin/bash
 
-#verificar se algum dispositivo foi conectado recentemente
-
+#cria um arquivo temporario
 filetmp=$(mktemp /tmp/backup.XXX)
+
+#armazena no arquivo temporario as ultimas 20 linhas do comando dmesg
 dmesg -k | tail -n20 > $filetmp
 if grep -E -q 'sd[abcdef]' $filetmp; then
         disp=$(grep -E -o -m1 'sd[abcdef]' $filetmp)
@@ -11,18 +12,12 @@ if grep -E -q 'sd[abcdef]' $filetmp; then
         echo -n 'utilizar esse dispositivo para backup?(s/n)'
         read resp1
         if [ "$resp1" = "n" ]; then
-                echo -n 'listar dispositivos identificados pelo sistema(s/n)'
-                read resp2
-                if [ "$resp2" = "s" ]; then
-                        lsblk -l -o VENDOR,NAME,SIZE,TYPE,MOUNTPOINT
-                else
-                        exit 0
-                fi
+                exit 0
         fi
 
 else
         echo parece que nenhum dispositivo foi conectado recentemente.
-
+	exit 1
 fi
 
 #verifica se o dispositivo tem um sistema de arquivos montado
@@ -38,8 +33,8 @@ if [ ! -d $path_mont/backup_mes_$mes ]; then
 else
         echo já existe um diretório chamado backup_mes_$mes!
         echo -n 'deseja copiar os arquivos para ele?(s/n)'
-        read resp1
-        if [ "$resp1" = "n"  ]; then
+        read resp2
+        if [ "$resp2" = "n"  ]; then
                 exit 1
         fi
 fi
