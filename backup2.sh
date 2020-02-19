@@ -2,25 +2,50 @@
 
 #verificar se algum dispositivo foi conectado recentemente
 
-disp=$(dmesg -k | tail | grep -E -o -m1 'sd[abcdef]')
-echo dispositivo encontrada: $disp
+filetmp=$(mktemp /tmp/backup.XXX)
+dmesg -k | tail -n20 > $filetmp
+if grep -E -q 'sd[abcdef]' $filetmp; then
+        disp=$(grep -E -o -m1 'sd[abcdef]' $filetmp)
+        echo dispositivo encontrado:
+        lsblk -l -o VENDOR,NAME,SIZE,TYPE,MOUNTPOINT /dev/$disp
+        echo -n 'utilizar esse dispositivo para backup?(s/n)'
+        read resp1
+        if [ "$resp1" = "n" ]; then
+                echo -n 'listar dispositivos identificados pelo sistema(s/n)'
+                read resp2
+                if [ "$resp2" = "s" ]; then
+                        lsblk -l -o VENDOR,NAME,SIZE,TYPE,MOUNTPOINT
+                else
+                        exit 0
+                fi
+        fi
 
-#se o dispositivo estiver montado, localiza o ponto de montagem
+else
+        echo parece que nenhum dispositivo foi conectado recentemente.
 
-part=$(mount | grep sda | cut -d' ' -f1)
+fi
 
-echo partição montada: $part
-
-#ponto de montagem
+#verifica se o dispositivo tem um sistema de arquivos montado
 
 path_mont=$(mount | grep sda | cut -d' ' -f3)
+echo ponto de montagem: $path_mont
 
-echo montado em: $path_mont
+#cria um diretorio de backup caso ele não exista
+mes=$(date +%m)
 
-#cria um diretorio de backup
+if [ ! -d $path_mont/backup_mes_$mes ]; then
+	mkdir $path_mont/backup_mes_$mes
+else
+        echo já existe um diretório chamado backup_mes_$mes!
+        echo -n 'deseja copiar os arquivos para ele?(s/n)'
+        read resp1
+        if [ "$resp1" = "n"  ]; then
+                exit 1
+        fi
+fi
 
-mkdir $path_mont/backup
 
 #copia os diretórios e arquivos
 
-cp -r -v -p ~/D* $path_mont/backup
+cp -rvpn ~/Documentos $path_mont/backup_mes_$mes
+
